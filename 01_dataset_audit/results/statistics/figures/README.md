@@ -1,332 +1,223 @@
-# Figures
+# Dataset Statistics — Figures
 
-This directory contains the visual summaries and diagnostic figures generated during the dataset audit and statistical analysis of the PhySense-Human dataset.
+This directory contains the visualizations generated from the statistical analysis of the PhySense-Human dataset.
 
-The figures are intended to make the structure, scale, diversity, and temporal characteristics of the dataset easy to inspect without opening the raw data.
+The figures provide a visual overview of the dataset's scale, split composition, temporal structure, shard distribution, modality availability, and image resolution.
 
----
-
-## Purpose
-
-The goal of this directory is to provide a compact visual overview of the dataset.
-
-The figures answer questions such as:
-
-- How large is the dataset?
-- How are frames distributed across train / validation / test?
-- How many videos contribute to each split?
-- How many frames are extracted from each video?
-- What resolutions are present?
-- How long are the extracted video sequences?
-- Is the dataset dominated by a small number of videos?
-- Are there unusual or potentially problematic videos?
-- What does a typical sample from the dataset look like?
-
-These visualizations are part of the dataset audit and are not intended to represent final experimental results.
+These plots are **dataset-analysis artifacts**, not final experimental results.
 
 ---
 
-# Figure Organization
+## Figures
 
-The current figures are organized around four main aspects:
+### 1. Dataset Resolution
 
-1. **Dataset scale**
-2. **Dataset composition**
-3. **Video and temporal structure**
-4. **Image / resolution characteristics**
+#### `resolution_distribution.png`
 
----
+Shows the distribution of image resolutions present in the dataset.
 
-## 1. Dataset Overview
+This figure is important for understanding the visual characteristics of the dataset and determining whether the images follow a consistent resolution format.
 
-### `dataset_overview.png`
-
-A high-level visual summary of the dataset.
-
-This figure should provide a quick understanding of the overall dataset composition, including:
-
-- total number of frames
-- total number of videos
-- train / validation / test distribution
-- number of dataset shards
-- distribution of frames across splits
-
-This is the first figure a reader should inspect when trying to understand the dataset.
-
-![Dataset Overview](dataset_overview.png)
-
----
-
-## 2. Resolution Distribution
-
-### `resolution_distribution.png`
-
-Shows the distribution of image resolutions across the dataset.
-
-This figure is important because the dataset is being investigated for image and video reconstruction / super-resolution research.
-
-It helps answer:
-
-- Are all HR images the same resolution?
-- Are there multiple source resolutions?
-- Is the LR resolution consistent?
-- Are there unusual resolution groups?
-- Does the dataset contain heterogeneous image sizes?
+It is particularly relevant for the later super-resolution and reconstruction experiments because the choice of input/output resolution and degradation model depends on the underlying resolution distribution.
 
 ![Resolution Distribution](resolution_distribution.png)
 
-### Why this matters
-
-Resolution consistency is important for designing super-resolution experiments.
-
-If the dataset contains multiple resolutions, experiments may need to explicitly account for this rather than assuming a single fixed input/output resolution.
-
 ---
 
-## 3. Frames per Video
+### 2. Frames per Video
 
-### `frames_per_video.png`
+#### `frames_per_video.png`
 
-Shows how many extracted frames are available for each source video.
+Shows the number of extracted frames associated with each source video.
 
-The dataset was constructed by sampling frames from YouTube videos at approximately one-second intervals.
-
-Therefore, the number of frames associated with a video provides an approximate indication of the temporal duration represented in the dataset.
+The dataset was constructed by sampling frames from YouTube videos at approximately one-second intervals. Therefore, the number of frames associated with a video provides an approximate representation of how much temporal information that video contributes to the dataset.
 
 ![Frames per Video](frames_per_video.png)
 
-### Why this matters
-
-This distribution is particularly relevant for temporal reconstruction.
-
-A video with many frames can provide substantially more temporal information than a video contributing only a small number of frames.
-
-The figure can therefore reveal:
-
-- short videos
-- long videos
-- unusually large videos
-- highly unbalanced contributions
-- potential dataset concentration around a small number of sources
+This distribution is important for evaluating whether the dataset contains sufficient temporal information for multi-frame reconstruction.
 
 ---
 
-## 4. Videos per Split
+### 3. Frames per Video Distribution
 
-### `videos_per_split.png`
+#### `frames_per_video_distribution.png`
 
-Shows the number of unique source videos assigned to:
+Provides the statistical distribution of the number of frames contributed by individual videos.
 
-- training
+While `frames_per_video.png` shows the individual video-level values, this figure provides a more compact view of the overall distribution.
+
+It helps identify:
+
+- short source videos,
+- long source videos,
+- the typical number of frames per video,
+- highly represented videos,
+- and potential imbalance in video contributions.
+
+![Frames per Video Distribution](frames_per_video_distribution.png)
+
+This is particularly relevant because the dataset should ideally not be dominated by a very small number of source videos.
+
+---
+
+### 4. Frames per Split
+
+#### `frames_per_split.png`
+
+Shows the number of frames assigned to each dataset split:
+
+- train
 - validation
-- testing
+- test
+
+![Frames per Split](frames_per_split.png)
+
+The split distribution provides an initial view of how the available data is allocated for training and evaluation.
+
+However, because individual frames from the same video are strongly correlated, frame counts alone are not sufficient to evaluate split quality.
+
+The corresponding video-level analysis is therefore also important.
+
+---
+
+### 5. Videos per Split
+
+#### `videos_per_split.png`
+
+Shows the number of unique source videos assigned to the training, validation, and test splits.
 
 ![Videos per Split](videos_per_split.png)
 
-### Why this matters
+This figure is especially important for this dataset because the fundamental unit of independence is the **source video**, rather than an individual frame.
 
-For video-based learning, the split should be considered at the **video level**, rather than treating individual frames as independent samples.
+The integrity audit verified that no source video was detected in more than one of the train, validation, or test splits.
 
-Frames extracted from the same video are highly correlated.
-
-Therefore, keeping all frames from a source video within a single split prevents temporal information from the same source from leaking between training and evaluation.
-
-The integrity audit confirmed that there is currently no detected video-level overlap between train, validation, and test.
+Therefore, the evaluation set is separated from the training data at the video level.
 
 ---
 
-# Temporal Analysis
+### 6. Frames per Shard
 
-The dataset is sampled temporally rather than consisting of independent still images.
+#### `frames_per_shard.png`
 
-This makes temporal statistics especially important.
+Shows the number of frames contained in each dataset shard.
 
-Future temporal figures may include:
+![Frames per Shard](frames_per_shard.png)
 
-- frame spacing
-- frames per video
-- sequence length distribution
-- frame-ID continuity
-- temporal gaps
-- video duration estimates
-- motion statistics
+The dataset is physically divided into multiple shards to make storage and processing of the approximately 500K-frame dataset more manageable.
 
-These figures help determine whether the dataset contains sufficient temporal redundancy to investigate multi-frame reconstruction.
+The shard boundaries are a storage/organization mechanism and should not be interpreted as independent datasets.
+
+A source video may span multiple shards, which is why shard-level statistics must be distinguished from video-level statistics.
 
 ---
 
-# Dataset Structure
+### 7. Frame ID Distribution
 
-The dataset contains:
+#### `frame_id_distribution.png`
 
-- approximately **500,507 HR frames**
-- approximately **547 source videos**
-- multiple dataset shards
-- train / validation / test splits
-- HR images
-- LR images
-- cloth masks
-- full-body masks
-- skin masks
+Shows the distribution of frame identifiers in the dataset.
 
-Each frame is associated with a source video identifier and a frame identifier.
+![Frame ID Distribution](frame_id_distribution.png)
 
-The filename convention contains both the frame number and the source YouTube video identifier.
+Frame IDs are useful for understanding the temporal organization of the extracted frames.
 
-Example:
+The filename convention contains both a frame identifier and the source video identifier.
+
+For example:
 
 `frame_0000033_-Hs-zuBOlQE.jpg`
 
 where:
 
-- `0000033` identifies the frame index
-- `-Hs-zuBOlQE` identifies the source video
+- `0000033` is the frame identifier
+- `-Hs-zuBOlQE` is the source YouTube video identifier
 
-This structure allows the analysis to operate at both the **frame level** and the **video level**.
-
----
-
-# Relation to the Research Direction
-
-These figures are not merely dataset documentation.
-
-They are intended to help answer an important research question:
-
-> Does the temporal redundancy naturally present in human-centric video provide useful information for reconstructing higher-quality images from low-resolution observations?
-
-The statistical analysis therefore focuses not only on dataset size, but also on:
-
-- temporal redundancy
-- inter-frame similarity
-- human motion
-- visual correspondence
-- spatial resolution
-- source-video diversity
-
-The results of these analyses will determine which experimental direction is most promising.
+This structure allows the dataset to be analyzed both at the frame level and at the source-video level.
 
 ---
 
-# Figure Naming Convention
+### 8. Modality Counts
 
-Figures should use descriptive names rather than generic names such as:
+#### `modality_counts.png`
 
-`figure1.png`
+Shows the availability and distribution of the different modalities associated with each frame.
 
-Prefer:
+The dataset contains:
 
-`resolution_distribution.png`
+- HR images
+- LR images
+- Cloth masks
+- Full-body masks
+- Skin masks
 
-instead of:
+![Modality Counts](modality_counts.png)
 
-`figure1.png`
+The modality information is important because the dataset is not limited to RGB image pairs.
 
-For experiment-specific figures, use:
+The human-related masks can potentially support future experiments involving:
 
-`exp01_temporal_redundancy.png`
+- human-region-aware reconstruction,
+- clothing-aware reconstruction,
+- skin-region analysis,
+- human-centric super-resolution,
+- and region-specific evaluation.
 
-or:
-
-`exp02_single_vs_multi_frame.png`
-
-This makes the repository easier to navigate and keeps figures understandable outside the original notebook.
+The integrity audit confirmed complete frame-level correspondence across the expected modalities.
 
 ---
 
-# Recommended Future Figures
+# What These Figures Tell Us
 
-As the project progresses, the following figures may be added:
+Taken together, these figures provide an initial statistical description of the dataset.
+
+They allow us to inspect:
+
+### Dataset scale
+
+Approximately **500,507 HR frames** are currently indexed across **547 source videos**.
 
 ### Dataset composition
 
-- `frames_per_shard.png`
-- `frames_per_split.png`
-- `videos_per_shard.png`
-- `frames_per_video.png`
+The dataset is divided into training, validation, and test splits at the source-video level.
 
 ### Temporal structure
 
-- `frame_interval_distribution.png`
-- `sequence_length_distribution.png`
-- `temporal_redundancy.png`
-- `frame_id_continuity.png`
+Because frames originate from videos and were sampled at approximately one-second intervals, the dataset contains temporal relationships that can later be investigated for multi-frame reconstruction.
 
-### Human-centric characteristics
+### Data organization
 
-- `person_scale_distribution.png`
-- `person_bbox_distribution.png`
-- `cloth_area_distribution.png`
-- `skin_area_distribution.png`
+The dataset is distributed across multiple physical shards, while the source-video identity remains the more meaningful unit for research analysis.
 
-### Visual correspondence
+### Image characteristics
 
-- `inter_frame_similarity.png`
-- `optical_flow_distribution.png`
-- `motion_magnitude_distribution.png`
-- `correspondence_quality.png`
+The resolution distribution provides information needed to design appropriate super-resolution and reconstruction experiments.
 
-### Data quality
+### Human-centric information
 
-- `image_quality_distribution.png`
-- `brightness_distribution.png`
-- `blur_distribution.png`
-- `compression_artifacts.png`
-
-Only figures that contribute to a meaningful research or dataset-analysis question should be added.
+The availability of cloth, full-body, and skin masks provides additional information beyond conventional LR/HR image pairs.
 
 ---
 
-# Source of Figures
+# Why These Figures Matter for the Research
 
-Figures in this directory are generated from the dataset statistics and analysis notebooks located elsewhere in the repository.
+The objective at this stage is **not yet to claim that the dataset solves a particular reconstruction problem**.
 
-The raw dataset is **not** stored in this Git repository.
+Instead, these statistics establish whether the dataset has the properties required to investigate such a problem.
 
-Large intermediate files, raw images, and generated datasets should not be committed unless explicitly required.
+The analysis is therefore moving through the following progression:
 
-The figures stored here are lightweight research artifacts intended to make the analysis reproducible and inspectable.
-
----
-
-# Interpretation Policy
-
-A figure should not be interpreted as evidence of a research claim by itself.
-
-Figures in this directory are primarily exploratory and diagnostic.
-
-A research claim should be supported by:
-
-1. the underlying dataset statistics,
-2. a clearly defined experimental protocol,
-3. quantitative measurements,
-4. appropriate baselines,
-5. and, where possible, statistical or qualitative validation.
-
-The purpose of these figures is to help identify promising research directions before committing to a full experimental pipeline.
-
----
-
-# Current Status
-
-| Category | Status |
-|---|---|
-| Dataset overview | Available / In progress |
-| Resolution analysis | Available / In progress |
-| Frames per video | Available / In progress |
-| Videos per split | Available / In progress |
-| Temporal analysis | In progress |
-| Motion analysis | Planned |
-| Visual correspondence | Planned |
-| Reconstruction analysis | Planned |
-
----
-
-## Next Step
-
-The figures generated during the dataset statistics stage will be used to identify the most important characteristics of the dataset.
-
-The next analysis stages will focus on:
-
-**temporal redundancy → motion → visual correspondence → reconstruction potential**
-
-These analyses will eventually determine whether the dataset supports a novel multi-frame human-video reconstruction or super-resolution problem.
+```text
+Dataset Integrity
+       ↓
+Dataset Statistics
+       ↓
+Temporal Redundancy
+       ↓
+Motion Analysis
+       ↓
+Visual Correspondence
+       ↓
+Reconstruction Experiments
+       ↓
+Research Question
